@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+news.json
+news_cache.json
+.DS_Store
+*.log

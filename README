@@ -1,0 +1,14 @@
+# RSS Aggregator
+
+Simple Python script that fetches and prints RSS feed.
+
+## Features
+- Fetch RSS feed
+- Parse XML
+- Print latest news
+
+## Run
+
+```bash
+pip install -r requirements.txt
+python main.py
