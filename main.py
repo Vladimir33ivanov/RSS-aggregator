@@ -5,6 +5,7 @@ from storage import save_to_json
 from filters import filter_by_keyword
 from cache_manager import load_cache, save_cache, is_today
 from datetime import datetime
+from formatter import print_as_table
 
 DEFAULT_RSS_URL = "https://news.ycombinator.com/rss"
 
@@ -50,9 +51,4 @@ if __name__ == "__main__":
     news = filter_by_keyword(news, keyword)
 
     save_to_json(news)
-    print("Новости сохранены в news.json (с временной меткой)")
-
-    for i, item in enumerate(news, start=1):
-        print(f"{i}. {item['title']}")
-        print(f"   {item['link']}")
-        print("-" * 40)
+    print_as_table(news)
