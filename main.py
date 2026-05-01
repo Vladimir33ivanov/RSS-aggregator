@@ -6,6 +6,7 @@ from filters import filter_by_keyword
 from cache_manager import load_cache, save_cache, is_today
 from datetime import datetime
 from formatter import print_as_table
+from sorter import sort_news
 
 DEFAULT_RSS_URL = "https://news.ycombinator.com/rss"
 
@@ -45,10 +46,16 @@ if __name__ == "__main__":
     url = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_RSS_URL
     limit = int(sys.argv[3]) if len(sys.argv) > 3 else 5
     keyword = sys.argv[2] if len(sys.argv) > 2 else None
+    sort_order = sys.argv[4] if len(sys.argv) > 4 else None
 
     news = fetch_rss(url, limit)
     news = merge_with_cache(news)
     news = filter_by_keyword(news, keyword)
+
+    if sort_order == "desc":
+        news = sort_news(news, reverse=True)
+    elif sort_order == "asc":
+        news = sort_news(news)
 
     save_to_json(news)
     print_as_table(news)
