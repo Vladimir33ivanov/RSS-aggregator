@@ -7,6 +7,7 @@ from cache_manager import load_cache, save_cache, is_today
 from datetime import datetime
 from formatter import print_as_table
 from sorter import sort_news
+from exporter import save_to_csv
 
 DEFAULT_RSS_URL = "https://news.ycombinator.com/rss"
 
@@ -57,5 +58,7 @@ if __name__ == "__main__":
     elif sort_order == "asc":
         news = sort_news(news)
 
-    save_to_json(news)
+    save_to_json(news) #JSON формат
+    save_to_csv(news) #CSV формат
+
     print_as_table(news)

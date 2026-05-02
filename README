@@ -6,6 +6,7 @@ Simple Python script that fetches and prints RSS feed.
 - Fetch RSS feed
 - Parse XML
 - Print latest news
+- Export to CSV
 
 ## Run
 
