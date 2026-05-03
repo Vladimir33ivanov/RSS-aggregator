@@ -48,6 +48,11 @@ if __name__ == "__main__":
     limit = int(sys.argv[3]) if len(sys.argv) > 3 else 5
     keyword = sys.argv[2] if len(sys.argv) > 2 else None
     sort_order = sys.argv[4] if len(sys.argv) > 4 else None
+    format_type = sys.argv[5] if len(sys.argv) > 5 else "all"
+
+    if format_type not in["json", "csv", "all"]:
+        print("Incorrect format, using all")
+        format_type = "all"
 
     news = fetch_rss(url, limit)
     news = merge_with_cache(news)
@@ -58,7 +63,12 @@ if __name__ == "__main__":
     elif sort_order == "asc":
         news = sort_news(news)
 
-    save_to_json(news) #JSON формат
-    save_to_csv(news) #CSV формат
+    if format_type == "json":
+        save_to_json(news)
+    elif format_type == "csv":
+        save_to_csv(news)
+    else:
+        save_to_json(news)
+        save_to_csv(news)
 
     print_as_table(news)
