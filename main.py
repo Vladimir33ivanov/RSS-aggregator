@@ -26,7 +26,7 @@ def fetch_rss(url, limit=5):
     return result
 
 
-def merge_with_cache(new_items):
+def merge_with_cache(new_items, only_new=False):
     cache = load_cache()
     today_str = datetime.now().strftime("%Y-%m-%d")
 
@@ -34,13 +34,19 @@ def merge_with_cache(new_items):
         existing_titles = {item["title"] for item in cache["items"]}
         unique_new = [item for item in new_items if item["title"] not in existing_titles]
         merged = cache["items"] + unique_new
-        print(f"Кэш за {today_str}: добавлено {len(unique_new)} новых, всего {len(merged)}")
-    else:
-        merged = new_items
-        print(f"Новый день, кэш сброшен")
 
-    save_cache(today_str, merged)
-    return merged
+        print(f"Кэш за {today_str}: добавлено {len(unique_new)} новых, всего {len(merged)}")
+
+        save_cache(today_str, merged)
+
+        if only_new:
+            return unique_new
+
+        return merged
+    else:
+        print(f"Новый день, кэш сброшен")
+        save_cache(today_str, new_items)
+        return new_items
 
 
 if __name__ == "__main__":
@@ -49,13 +55,14 @@ if __name__ == "__main__":
     keyword = sys.argv[2] if len(sys.argv) > 2 else None
     sort_order = sys.argv[4] if len(sys.argv) > 4 else None
     format_type = sys.argv[5] if len(sys.argv) > 5 else "all"
+    only_new = "--new" in sys.argv
 
     if format_type not in["json", "csv", "all"]:
         print("Incorrect format, using all")
         format_type = "all"
 
     news = fetch_rss(url, limit)
-    news = merge_with_cache(news)
+    news = merge_with_cache(news, only_new)
     news = filter_by_keyword(news, keyword)
 
     if sort_order == "desc":
