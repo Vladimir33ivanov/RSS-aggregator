@@ -13,15 +13,37 @@ DEFAULT_RSS_URL = "https://news.ycombinator.com/rss"
 
 
 def fetch_rss(url, limit=5):
-    response = requests.get(url)
-    root = ET.fromstring(response.content)
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+    except requests.exceptions.ConnectionError:
+        print(f"Ошибка: не удалось подключиться к {url}")
+        return []
+    except requests.exceptions.Timeout:
+        print(f"Ошибка: сервер не ответил за 10 секунд ({url})")
+        return []
+    except requests.exceptions.HTTPError as e:
+        print(f"Ошибка HTTP {e.response.status_code}: {url}")
+        return []
+
+    try:
+        root = ET.fromstring(response.content)
+    except ET.ParseError as e:
+        print(f"Ошибка: не удалось разобрать XML ({e})")
+        return []
+
     items = root.findall(".//item")
     result = []
-
     for item in items[:limit]:
-        title = item.find("title").text
-        link = item.find("link").text
-        result.append({"title": title, "link": link})
+        title_el = item.find("title")
+        link_el = item.find("link")
+        date_el = item.find("pubDate")
+
+        title = title_el.text if title_el is not None else "Без названия"
+        link = link_el.text if link_el is not None else ""
+        pub_date = date_el.text if date_el is not None else ""
+
+        result.append({"title": title, "link": link, "pubDate": pub_date})
 
     return result
 
