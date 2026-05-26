@@ -1,3 +1,5 @@
+import os
+
 import requests
 import xml.etree.ElementTree as ET
 import sys
@@ -11,6 +13,12 @@ from exporter import save_to_csv
 
 DEFAULT_RSS_URL = "https://news.ycombinator.com/rss"
 
+def load_sources(filepath="sources.txt"):
+    if not os.path.exists(filepath):
+        return [DEFAULT_RSS_URL]
+    with open(filepath, "r", encoding="utf-8") as f:
+        urls = [line.strip() for line in f if line.strip() and not line.startswith("#")]
+    return urls if urls else [DEFAULT_RSS_URL]
 
 def fetch_rss(url, limit=5):
     try:
@@ -72,7 +80,7 @@ def merge_with_cache(new_items, only_new=False):
 
 
 if __name__ == "__main__":
-    url = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_RSS_URL
+    urls = [sys.argv[1]] if len(sys.argv) > 1 else load_sources()
     limit = int(sys.argv[3]) if len(sys.argv) > 3 else 5
     keyword = sys.argv[2] if len(sys.argv) > 2 else None
     sort_order = sys.argv[4] if len(sys.argv) > 4 else None
@@ -83,9 +91,10 @@ if __name__ == "__main__":
         print("Incorrect format, using all")
         format_type = "all"
 
-    news = fetch_rss(url, limit)
+    news = []
+    for url in urls:
+        news += fetch_rss(url, limit)
     news = merge_with_cache(news, only_new)
-    news = filter_by_keyword(news, keyword)
 
     if sort_order == "desc":
         news = sort_news(news, reverse=True)
