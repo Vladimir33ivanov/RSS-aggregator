@@ -2,7 +2,6 @@ import os
 
 import requests
 import xml.etree.ElementTree as ET
-import sys
 from storage import save_to_json
 from filters import filter_by_keyword
 from cache_manager import load_cache, save_cache, is_today
@@ -10,6 +9,7 @@ from datetime import datetime
 from formatter import print_as_table
 from sorter import sort_news
 from exporter import save_to_csv
+import argparse
 
 DEFAULT_RSS_URL = "https://news.ycombinator.com/rss"
 
@@ -80,30 +80,31 @@ def merge_with_cache(new_items, only_new=False):
 
 
 if __name__ == "__main__":
-    urls = [sys.argv[1]] if len(sys.argv) > 1 else load_sources()
-    limit = int(sys.argv[3]) if len(sys.argv) > 3 else 5
-    keyword = sys.argv[2] if len(sys.argv) > 2 else None
-    sort_order = sys.argv[4] if len(sys.argv) > 4 else None
-    format_type = sys.argv[5] if len(sys.argv) > 5 else "all"
-    only_new = "--new" in sys.argv
+    parser = argparse.ArgumentParser(description="RSS Aggregator")
+    parser.add_argument("--url", type=str, default=None, help="URL RSS-фида")
+    parser.add_argument("--limit", type=int, default=5, help="Кол-во новостей с каждого источника")
+    parser.add_argument("--keyword", type=str, default=None, help="Фильтр по ключевому слову")
+    parser.add_argument("--sort", type=str, choices=["asc", "desc"], default=None, help="Сортировка")
+    parser.add_argument("--format", type=str, choices=["json", "csv", "all"], default="all", help="Формат вывода")
+    parser.add_argument("--new", action="store_true", help="Показать только новые")
+    args = parser.parse_args()
 
-    if format_type not in["json", "csv", "all"]:
-        print("Incorrect format, using all")
-        format_type = "all"
+    urls = [args.url] if args.url else load_sources()
 
     news = []
     for url in urls:
-        news += fetch_rss(url, limit)
-    news = merge_with_cache(news, only_new)
+        news += fetch_rss(url, args.limit)
+    news = merge_with_cache(news, args.new)
+    news = filter_by_keyword(news, args.keyword)
 
-    if sort_order == "desc":
+    if args.sort == "desc":
         news = sort_news(news, reverse=True)
-    elif sort_order == "asc":
+    elif args.sort == "asc":
         news = sort_news(news)
 
-    if format_type == "json":
+    if args.format == "json":
         save_to_json(news)
-    elif format_type == "csv":
+    elif args.format == "csv":
         save_to_csv(news)
     else:
         save_to_json(news)
