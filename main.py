@@ -3,7 +3,7 @@ import os
 import requests
 import xml.etree.ElementTree as ET
 from storage import save_to_json
-from filters import filter_by_keyword
+from filters import filter_by_keyword, filter_by_days
 from cache_manager import load_cache, save_cache, is_today
 from datetime import datetime
 from formatter import print_as_table
@@ -81,6 +81,7 @@ def merge_with_cache(new_items, only_new=False):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="RSS Aggregator")
+    parser.add_argument("--days", type=int, default=None, help="Показать новости за последние N дней")
     parser.add_argument("--url", type=str, default=None, help="URL RSS-фида")
     parser.add_argument("--limit", type=int, default=5, help="Кол-во новостей с каждого источника")
     parser.add_argument("--keyword", type=str, default=None, help="Фильтр по ключевому слову")
@@ -96,6 +97,7 @@ if __name__ == "__main__":
         news += fetch_rss(url, args.limit)
     news = merge_with_cache(news, args.new)
     news = filter_by_keyword(news, args.keyword)
+    news = filter_by_days(news, args.days)
 
     if args.sort == "desc":
         news = sort_news(news, reverse=True)
