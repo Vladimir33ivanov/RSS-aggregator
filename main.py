@@ -3,7 +3,7 @@ import os
 import requests
 import xml.etree.ElementTree as ET
 from storage import save_to_json
-from filters import filter_by_keyword, filter_by_days
+from filters import filter_by_keyword, filter_by_days, deduplicate
 from cache_manager import load_cache, save_cache, is_today
 from datetime import datetime
 from formatter import print_as_table
@@ -98,6 +98,7 @@ if __name__ == "__main__":
     news = merge_with_cache(news, args.new)
     news = filter_by_keyword(news, args.keyword)
     news = filter_by_days(news, args.days)
+    news = deduplicate(news)
 
     if args.sort == "desc":
         news = sort_news(news, reverse=True)

@@ -27,5 +27,14 @@ def filter_by_days(news, days):
                 result.append(item)
         except Exception:
             result.append(item)
+        return result
 
+def deduplicate(news):
+    seen = set()
+    result = []
+    for item in news:
+        key = item.get("link") or item.get("title")
+        if key not in seen:
+            seen.add(key)
+            result.append(item)
     return result
