@@ -4,9 +4,10 @@ from datetime import datetime, timezone, timedelta
 def filter_by_keyword(news, keyword):
     if not keyword:
         return news
+    keywords = [k.strip().lower() for k in keyword.split(",")]
     return [
         item for item in news
-        if keyword.lower() in item["title"].lower()
+        if any(k in item["title"].lower() for k in keywords)
     ]
 
 def filter_by_days(news, days):
