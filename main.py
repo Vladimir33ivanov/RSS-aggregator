@@ -95,6 +95,7 @@ if __name__ == "__main__":
     news = []
     for url in urls:
         news += fetch_rss(url, args.limit)
+    print(f"Загружено с {len(urls)} источников: {', '.join(url.split('/')[2] for url in urls)}")
     news = merge_with_cache(news, args.new)
     news = filter_by_keyword(news, args.keyword)
     news = filter_by_days(news, args.days)
