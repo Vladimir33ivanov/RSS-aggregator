@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import List, Optional
 
 from app.domain.dedup import deduplicate
+from app.domain.filters.category_filter import CategoryFilter
 from app.domain.filters.date_range_filter import DateRangeFilter
 from app.domain.filters.keyword_filter import KeywordFilter
 from app.domain.models import Article
@@ -23,6 +24,7 @@ class FeedService:
         self,
         keyword: Optional[str] = None,
         days: Optional[int] = None,
+        category: Optional[str] = None,
         sort_reverse: Optional[bool] = None,
         use_cache: bool = True,
         only_new: bool = False,
@@ -34,6 +36,9 @@ class FeedService:
         if use_cache:
             articles = self._merge_with_cache(articles, only_new=only_new)
 
+        if category:
+            category_urls = [s.url for s in self._sources.list_by_category(category)]
+            articles = CategoryFilter(category_urls).apply(articles)
         if keyword:
             articles = KeywordFilter(keyword).apply(articles)
         if days:

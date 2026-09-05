@@ -5,6 +5,10 @@
 
 ## [Unreleased]
 
+### Added
+- Фильтрация ленты и списка источников по категории:
+  `GET /feed?category=...`, `GET /sources?category=...`, `--category` в CLI
+
 ### Planned
 - Хранилище источников на SQLite вместо файла sources.txt
 - Управление источниками и категориями через веб-интерфейс

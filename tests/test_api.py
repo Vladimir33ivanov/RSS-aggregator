@@ -40,3 +40,17 @@ def test_add_and_list_sources():
     response = client.get("/sources")
     assert response.status_code == 200
     assert any(s["url"] == "https://example.com/rss" for s in response.json())
+
+
+def test_list_sources_filtered_by_category():
+    client.post(
+        "/sources",
+        json={"url": "https://sport.example/rss", "name": "Sport", "category": "sport"},
+    )
+
+    response = client.get("/sources", params={"category": "sport"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert all(s["category"] == "sport" for s in body)
+    assert any(s["url"] == "https://sport.example/rss" for s in body)

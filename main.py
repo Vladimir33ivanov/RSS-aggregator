@@ -14,6 +14,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="RSS Aggregator")
     parser.add_argument("--days", type=int, default=None, help="Показать новости за последние N дней")
     parser.add_argument("--keyword", type=str, default=None, help="Фильтр по ключевому слову (через запятую)")
+    parser.add_argument("--category", type=str, default=None, help="Фильтр по категории источника")
     parser.add_argument("--sort", type=str, choices=["asc", "desc"], default=None, help="Сортировка")
     parser.add_argument("--format", type=str, choices=["json", "csv", "all"], default="all", help="Формат вывода")
     parser.add_argument("--new", action="store_true", help="Показать только новые (за сегодня)")
@@ -27,6 +28,7 @@ if __name__ == "__main__":
     articles = get_feed_service().get_feed(
         keyword=args.keyword,
         days=args.days,
+        category=args.category,
         sort_reverse=sort_reverse,
         only_new=args.new,
     )

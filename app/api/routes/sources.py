@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
@@ -14,7 +16,12 @@ class SourceIn(BaseModel):
 
 
 @router.get("")
-def list_sources(repo: FileSourceRepository = Depends(get_source_repository)):
+def list_sources(
+    category: Optional[str] = None,
+    repo: FileSourceRepository = Depends(get_source_repository),
+):
+    if category:
+        return repo.list_by_category(category)
     return repo.list_all()
 
 
