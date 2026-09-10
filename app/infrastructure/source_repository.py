@@ -45,3 +45,21 @@ class FileSourceRepository:
 
     def list_by_category(self, category: str) -> List[Source]:
         return [s for s in self._sources if s.category == category]
+
+    def delete(self, source_id: int) -> bool:
+        """Удаляет источник по id. Возвращает False, если такого id нет.
+
+        Замечание: файл хранит только URL (без категорий и комментариев),
+        поэтому при перезаписи строки-комментарии из исходного sources.txt
+        не восстанавливаются — это ограничение текущего формата хранения,
+        снимется при переходе на SQLite."""
+        if not any(s.id == source_id for s in self._sources):
+            return False
+        self._sources = [s for s in self._sources if s.id != source_id]
+        self._rewrite_file()
+        return True
+
+    def _rewrite_file(self) -> None:
+        with open(self._path, "w", encoding="utf-8") as f:
+            for source in self._sources:
+                f.write(f"{source.url}\n")

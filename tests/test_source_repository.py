@@ -82,3 +82,25 @@ def test_ids_are_unique_and_increment(sources_file):
     second = repo.add("https://two.example/rss", name="Two")
 
     assert first.id != second.id
+
+
+def test_delete_removes_from_memory_and_file(sources_file):
+    repo = FileSourceRepository(path=sources_file)
+    to_keep = repo.add("https://keep.example/rss", name="Keep")
+    to_delete = repo.add("https://delete.example/rss", name="Delete")
+
+    result = repo.delete(to_delete.id)
+
+    assert result is True
+    remaining_urls = {s.url for s in repo.list_all()}
+    assert remaining_urls == {to_keep.url}
+    with open(sources_file, "r", encoding="utf-8") as f:
+        content = f.read()
+    assert "delete.example" not in content
+    assert "keep.example" in content
+
+
+def test_delete_unknown_id_returns_false(sources_file):
+    repo = FileSourceRepository(path=sources_file)
+
+    assert repo.delete(999) is False

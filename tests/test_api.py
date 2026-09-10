@@ -42,6 +42,25 @@ def test_add_and_list_sources():
     assert any(s["url"] == "https://example.com/rss" for s in response.json())
 
 
+def test_delete_source():
+    response = client.post(
+        "/sources",
+        json={"url": "https://to-delete.example/rss", "name": "ToDelete"},
+    )
+    source_id = response.json()["id"]
+
+    response = client.delete(f"/sources/{source_id}")
+    assert response.status_code == 200
+
+    response = client.get("/sources")
+    assert all(s["url"] != "https://to-delete.example/rss" for s in response.json())
+
+
+def test_delete_unknown_source_returns_404():
+    response = client.delete("/sources/999999")
+    assert response.status_code == 404
+
+
 def test_list_sources_filtered_by_category():
     client.post(
         "/sources",

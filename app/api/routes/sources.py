@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.dependencies import get_source_repository
@@ -31,3 +31,14 @@ def add_source(
     repo: FileSourceRepository = Depends(get_source_repository),
 ):
     return repo.add(source.url, source.name, source.category)
+
+
+@router.delete("/{source_id}")
+def delete_source(
+    source_id: int,
+    repo: FileSourceRepository = Depends(get_source_repository),
+):
+    deleted = repo.delete(source_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Источник не найден")
+    return {"status": "deleted", "id": source_id}
