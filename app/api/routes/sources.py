@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.dependencies import get_source_repository
-from app.infrastructure.source_repository import FileSourceRepository
+from app.infrastructure.source_repository import DuplicateSourceError, FileSourceRepository
 
 router = APIRouter(prefix="/sources", tags=["sources"])
 
@@ -30,7 +30,10 @@ def add_source(
     source: SourceIn,
     repo: FileSourceRepository = Depends(get_source_repository),
 ):
-    return repo.add(source.url, source.name, source.category)
+    try:
+        return repo.add(source.url, source.name, source.category)
+    except DuplicateSourceError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
 
 
 @router.delete("/{source_id}")

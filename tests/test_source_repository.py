@@ -3,7 +3,7 @@ import tempfile
 
 import pytest
 
-from app.infrastructure.source_repository import FileSourceRepository
+from app.infrastructure.source_repository import DuplicateSourceError, FileSourceRepository
 
 
 @pytest.fixture
@@ -104,3 +104,11 @@ def test_delete_unknown_id_returns_false(sources_file):
     repo = FileSourceRepository(path=sources_file)
 
     assert repo.delete(999) is False
+
+
+def test_add_duplicate_url_raises(sources_file):
+    repo = FileSourceRepository(path=sources_file)
+    repo.add("https://dup.example/rss", name="First")
+
+    with pytest.raises(DuplicateSourceError):
+        repo.add("https://dup.example/rss", name="Second")

@@ -61,6 +61,15 @@ def test_delete_unknown_source_returns_404():
     assert response.status_code == 404
 
 
+def test_add_duplicate_source_returns_409():
+    payload = {"url": "https://dup-api.example/rss", "name": "Dup"}
+    first = client.post("/sources", json=payload)
+    assert first.status_code == 200
+
+    second = client.post("/sources", json=payload)
+    assert second.status_code == 409
+
+
 def test_list_sources_filtered_by_category():
     client.post(
         "/sources",

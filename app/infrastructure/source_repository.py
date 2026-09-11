@@ -12,6 +12,14 @@ from app.domain.models import Source
 DEFAULT_SOURCES_FILE = "sources.txt"
 
 
+class DuplicateSourceError(Exception):
+    """Источник с таким URL уже добавлен."""
+
+    def __init__(self, url: str):
+        self.url = url
+        super().__init__(f"Источник с URL '{url}' уже существует")
+
+
 class FileSourceRepository:
     def __init__(self, path: str = DEFAULT_SOURCES_FILE):
         self._path = path
@@ -33,6 +41,8 @@ class FileSourceRepository:
                 self._next_id += 1
 
     def add(self, url: str, name: str, category: str = "general") -> Source:
+        if any(s.url == url for s in self._sources):
+            raise DuplicateSourceError(url)
         source = Source(id=self._next_id, url=url, name=name, category=category)
         self._sources.append(source)
         self._next_id += 1
