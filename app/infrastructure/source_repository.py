@@ -1,8 +1,9 @@
 """Repository pattern поверх хранилища источников. Перенесено из логики
 load_sources() в старом main.py — источники по-прежнему читаются из
 sources.txt, чтобы не терять уже накопленный список. Интерфейс не завязан
-на конкретное хранилище (см. docs/architecture-drivers.md), поэтому замена
-на SQLite в будущем не потребует правок в FeedService/API."""
+на конкретное хранилище (см. docs/architecture-drivers.md) — есть
+и PostgreSQL-реализация (postgres_source_repository.py), переключается
+через app/dependencies.py."""
 
 import os
 from typing import List
@@ -61,8 +62,8 @@ class FileSourceRepository:
 
         Замечание: файл хранит только URL (без категорий и комментариев),
         поэтому при перезаписи строки-комментарии из исходного sources.txt
-        не восстанавливаются — это ограничение текущего формата хранения,
-        снимется при переходе на SQLite."""
+        не восстанавливаются — это ограничение файлового формата хранения,
+        не актуально для PostgreSQL-бэкенда (postgres_source_repository.py)."""
         if not any(s.id == source_id for s in self._sources):
             return False
         self._sources = [s for s in self._sources if s.id != source_id]
