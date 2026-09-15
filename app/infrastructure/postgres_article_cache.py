@@ -42,9 +42,7 @@ class PostgresArticleCache:
     def save(self, date: str, articles: List[Article]) -> None:
         parsed_date = date_cls.fromisoformat(date)
         with self._conn.cursor() as cur:
-            # Кэш держит только один активный день — старые строки больше не нужны.
-            cur.execute("DELETE FROM articles WHERE cached_date != %s", (parsed_date,))
-            cur.execute("DELETE FROM articles WHERE cached_date = %s", (parsed_date,))
+            cur.execute("DELETE FROM articles")
             cur.executemany(
                 "INSERT INTO articles (title, link, pub_date, source_url, cached_date) "
                 "VALUES (%s, %s, %s, %s, %s)",
