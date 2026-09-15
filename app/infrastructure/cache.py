@@ -19,9 +19,6 @@ def load_cache(path: str = DEFAULT_CACHE_FILE) -> dict:
             data["items"] = [Article(**item) for item in data["items"]]
             return data
         except (json.JSONDecodeError, TypeError, KeyError):
-            # Кэш повреждён или в старом/несовместимом формате (например,
-            # остался от версии до переноса логики в app/) — не роняем
-            # приложение, а просто считаем, что валидного кэша на сегодня нет.
             pass
     return {"date": None, "items": []}
 
