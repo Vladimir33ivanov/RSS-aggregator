@@ -89,6 +89,50 @@ SOURCE_BACKEND=postgres uvicorn app.main:app --reload
 `FeedService` и API-роутеры не знают и не зависят от того, какое хранилище
 используется на самом деле.
 
+`articles.source_id` — foreign key на `sources.id` (`ON DELETE CASCADE`),
+`pub_date` хранится как `TIMESTAMPTZ`. Если база уже была создана по
+старой схеме (`source_url TEXT`, `pub_date TEXT`) — накатить
+[`db/migrations/001_articles_fk_and_timestamptz.sql`](db/migrations/001_articles_fk_and_timestamptz.sql):
+
+```powershell
+Get-Content db/migrations/001_articles_fk_and_timestamptz.sql | docker exec -i rss-aggregator-db psql -U rss_user -d rss_aggregator
+```
+
+Миграция очищает таблицу `articles` (это одноразовый кэш на текущий день,
+не жалко) — `sources` она не трогает.
+
+### EXPLAIN ANALYZE на объёме данных
+
+[`db/explain_demo.sql`](db/explain_demo.sql) — самодостаточный скрипт:
+создаёт временную таблицу, наполняет её 500 000 строк через
+`generate_series` и показывает план запроса до/после индекса:
+
+```powershell
+Get-Content db/explain_demo.sql | docker exec -i rss-aggregator-db psql -U rss_user -d rss_aggregator
+```
+
+Не трогает реальные `sources`/`articles`, временная таблица удаляется
+сама в конце сессии psql.
+
+## Резервное копирование
+
+[`scripts/backup_postgres.sh`](scripts/backup_postgres.sh) — `pg_dump` из
+контейнера в сжатый архив с датой в имени, автоматическое удаление
+бэкапов старше 7 дней, логирование каждого шага в `logs/backup.log`.
+Запускается из WSL:
+
+```bash
+chmod +x scripts/backup_postgres.sh   # один раз
+./scripts/backup_postgres.sh
+```
+
+Для регулярного запуска — через `cron` (пример на каждый день в 3:00,
+`crontab -e`):
+
+```
+0 3 * * * cd /путь/к/проекту && ./scripts/backup_postgres.sh
+```
+
 ## Структура проекта
 
 ```
@@ -98,10 +142,14 @@ app/
 ├── domain/         # бизнес-логика: модели, фильтры, сортировка, дедупликация
 └── infrastructure/ # получение RSS, кэш и хранилище источников (файл или Postgres)
 db/
-└── schema.sql      # схема PostgreSQL (sources, articles)
+├── schema.sql          # схема PostgreSQL (sources, articles) для новой БД
+├── migrations/         # миграции для уже существующей БД
+└── explain_demo.sql    # демо EXPLAIN ANALYZE на большом объёме данных
+scripts/
+└── backup_postgres.sh  # pg_dump + ротация + логирование, для cron/WSL
 docker-compose.yml  # локальный Postgres для разработки
 main.py             # тонкая CLI-обёртка над app/ (не дублирует логику)
-tests/              # pytest
+tests/              # pytest (test_postgres_* — интеграционные, нужен DATABASE_URL)
 ```
 
 ## Документация
@@ -122,3 +170,15 @@ tests/              # pytest
 ```bash
 pytest -v
 ```
+
+Тесты на Postgres-бэкенд (`tests/test_postgres_*.py`) — интеграционные,
+пропускаются автоматически без переменной `DATABASE_URL`. Чтобы прогнать
+их локально (нужен поднятый `docker compose up -d`):
+
+```powershell
+$env:DATABASE_URL="postgresql://rss_user:rss_password@localhost:5432/rss_aggregator"
+pytest -v
+```
+
+В CI (`.github/workflows/tests.yml`) Postgres поднимается как service
+автоматически, `DATABASE_URL` прокидывается сам.

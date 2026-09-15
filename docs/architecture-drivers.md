@@ -130,7 +130,10 @@ Repository pattern (шаги 4–6 выше) позволяет `Source Reposito
   одного пользователя этого достаточно, и не требует внешних зависимостей.
 - **PostgreSQL** — `PostgresSourceRepository` и `PostgresArticleCache`
   поверх таблиц `sources` и `articles` (`db/schema.sql`). Поднимается
-  локально через `docker-compose.yml`.
+  локально через `docker-compose.yml`. Таблицы связаны через
+  `articles.source_id → sources.id` (`ON DELETE CASCADE`) — удаление
+  источника автоматически чистит его статьи из кэша; `load()` использует
+  `JOIN` для восстановления `source_url` в доменной модели `Article`.
 
 Бэкенд выбирается переменной окружения `SOURCE_BACKEND` (`file` — по
 умолчанию, `postgres` — база в Docker) в `app/dependencies.py`; подробности

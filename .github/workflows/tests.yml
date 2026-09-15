@@ -9,6 +9,22 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: rss_aggregator
+          POSTGRES_USER: rss_user
+          POSTGRES_PASSWORD: rss_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U rss_user -d rss_aggregator"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
     steps:
       - uses: actions/checkout@v4
 
@@ -19,5 +35,12 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Apply Postgres schema
+        run: |
+          sudo apt-get update && sudo apt-get install --yes postgresql-client
+          PGPASSWORD=rss_password psql -h localhost -U rss_user -d rss_aggregator -f db/schema.sql
+
       - name: Run tests
         run: pytest -v
+        env:
+          DATABASE_URL: postgresql://rss_user:rss_password@localhost:5432/rss_aggregator

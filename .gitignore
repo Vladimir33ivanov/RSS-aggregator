@@ -9,3 +9,5 @@ news_cache.json
 .DS_Store
 *.log
 .idea/
+backups/
+logs/

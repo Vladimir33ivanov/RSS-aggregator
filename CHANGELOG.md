@@ -18,6 +18,27 @@
   `docker-compose.yml`, `db/schema.sql`, `PostgresSourceRepository`,
   `PostgresArticleCache`, переключение через переменную окружения
   `SOURCE_BACKEND=postgres`
+- `articles.source_id` — foreign key на `sources.id` (`ON DELETE CASCADE`)
+  вместо текстового `source_url`; `pub_date` — `TIMESTAMPTZ` вместо текста
+  (конвертация RFC 822 <-> datetime в `PostgresArticleCache`)
+- `db/migrations/001_articles_fk_and_timestamptz.sql` — миграция для БД,
+  созданных по старой схеме
+- `db/explain_demo.sql` — демонстрация `EXPLAIN ANALYZE` (Seq Scan vs
+  Index Scan) на 500 000 сгенерированных строк, без затрагивания реальных
+  данных
+- `scripts/backup_postgres.sh` — `pg_dump` с ротацией старых бэкапов и
+  логированием, для запуска через cron в WSL
+- Интеграционные тесты `tests/test_postgres_source_repository.py` и
+  `tests/test_postgres_article_cache.py` (пропускаются без `DATABASE_URL`)
+- Postgres как service в CI (`.github/workflows/tests.yml`) — Postgres-тесты
+  теперь реально гоняются на каждый push, а не только локально
+
+### Fixed
+- `PostgresArticleCache.save()`: DELETE + серия INSERT теперь в одной
+  транзакции (`with self._conn:` вместо `autocommit=True`) — раньше
+  падение на середине записи могло оставить кэш пустым
+- Упрощён `save()`: два DELETE подряд (`!= date` и `= date`), вместе
+  покрывавшие всю таблицу, заменены на один безусловный `DELETE FROM articles`
 
 ### Planned
 - Управление источниками и категориями через веб-интерфейс
