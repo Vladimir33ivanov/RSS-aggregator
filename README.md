@@ -10,7 +10,9 @@
 - Фильтрация по ключевым словам, давности публикации и категории источника
 - Дедупликация и сортировка
 - Кэш за текущий день, экспорт в JSON/CSV (CLI)
-- Веб-API: добавление источников, лента с фильтрами, интерактивная документация
+- Веб-API: добавление/удаление источников, лента с фильтрами, интерактивная документация
+- Хранилище источников и кэш статей — файл или PostgreSQL, переключается
+  одной переменной окружения (см. [Хранилище данных](#хранилище-данных))
 
 ## Быстрый старт
 
@@ -51,7 +53,41 @@ uvicorn app.main:app --reload
 | `GET /health` | проверка, что сервис жив |
 | `GET /sources` | список источников (`?category=...` — фильтр) |
 | `POST /sources` | добавить источник |
+| `DELETE /sources/{id}` | удалить источник |
 | `GET /feed` | лента (`?keyword=`, `?days=`, `?category=`, `?sort=asc\|desc`) |
+
+## Хранилище данных
+
+По умолчанию источники хранятся в `sources.txt`, а кэш статей — в
+`news_cache.json`. Это самый простой вариант, ничего дополнительно
+устанавливать не нужно.
+
+Есть и вариант с PostgreSQL — для этого в проекте уже готовы
+`docker-compose.yml` и схема БД (`db/schema.sql`):
+
+```bash
+docker compose up -d              # поднимет Postgres, схема применится сама
+```
+
+Переключение бэкенда — одна переменная окружения:
+
+```bash
+# Windows PowerShell
+$env:SOURCE_BACKEND="postgres"; uvicorn app.main:app --reload
+
+# Linux/macOS
+SOURCE_BACKEND=postgres uvicorn app.main:app --reload
+```
+
+Без установленной переменной (или `SOURCE_BACKEND=file`) всё работает как
+раньше, через файлы. Подключение к БД настраивается через `DB_HOST`,
+`DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` (значения по умолчанию
+совпадают с `docker-compose.yml`, см. `app/infrastructure/db.py`).
+
+Оба бэкенда реализуют один и тот же интерфейс (Repository pattern, см.
+[`docs/architecture-drivers.md`](docs/architecture-drivers.md)), поэтому
+`FeedService` и API-роутеры не знают и не зависят от того, какое хранилище
+используется на самом деле.
 
 ## Структура проекта
 
@@ -60,7 +96,10 @@ app/
 ├── api/            # FastAPI-роутеры (HTTP-слой)
 ├── services/       # оркестрация (Feed Service)
 ├── domain/         # бизнес-логика: модели, фильтры, сортировка, дедупликация
-└── infrastructure/ # получение RSS, кэш, файлы, хранилище источников
+└── infrastructure/ # получение RSS, кэш и хранилище источников (файл или Postgres)
+db/
+└── schema.sql      # схема PostgreSQL (sources, articles)
+docker-compose.yml  # локальный Postgres для разработки
 main.py             # тонкая CLI-обёртка над app/ (не дублирует логику)
 tests/              # pytest
 ```

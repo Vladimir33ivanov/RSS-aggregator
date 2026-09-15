@@ -11,14 +11,18 @@ from app.domain.filters.date_range_filter import DateRangeFilter
 from app.domain.filters.keyword_filter import KeywordFilter
 from app.domain.models import Article
 from app.domain.sorting import sort_by_title
-from app.infrastructure import cache as cache_infra
+from app.infrastructure.article_cache import FileArticleCache
 from app.infrastructure.rss_fetcher import fetch_source
 from app.infrastructure.source_repository import FileSourceRepository
 
 
 class FeedService:
-    def __init__(self, source_repository: FileSourceRepository):
+    def __init__(self, source_repository: FileSourceRepository, article_cache=None):
         self._sources = source_repository
+        # По умолчанию — файловый кэш, чтобы прямое создание FeedService(...)
+        # без явного article_cache (как раньше) не ломалось. app/dependencies.py
+        # передаёт конкретный бэкенд (файл или Postgres) явно.
+        self._cache = article_cache if article_cache is not None else FileArticleCache()
 
     def get_feed(
         self,
@@ -52,15 +56,15 @@ class FeedService:
         return articles
 
     def _merge_with_cache(self, new_articles: List[Article], only_new: bool) -> List[Article]:
-        cache = cache_infra.load_cache()
+        cache = self._cache.load()
         today_str = datetime.now().strftime("%Y-%m-%d")
 
-        if cache_infra.is_today(cache["date"]):
+        if self._cache.is_today(cache["date"]):
             existing_titles = {a.title for a in cache["items"]}
             unique_new = [a for a in new_articles if a.title not in existing_titles]
             merged = cache["items"] + unique_new
-            cache_infra.save_cache(today_str, merged)
+            self._cache.save(today_str, merged)
             return unique_new if only_new else merged
 
-        cache_infra.save_cache(today_str, new_articles)
+        self._cache.save(today_str, new_articles)
         return new_articles

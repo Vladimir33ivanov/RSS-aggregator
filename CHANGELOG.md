@@ -8,9 +8,18 @@
 ### Added
 - Фильтрация ленты и списка источников по категории:
   `GET /feed?category=...`, `GET /sources?category=...`, `--category` в CLI
+- Тесты для `FileSourceRepository` (загрузка, добавление, удаление,
+  фильтрация по категории, защита от дублей)
+- `DELETE /sources/{id}` — удаление источника
+- Защита от дублирующихся источников (`DuplicateSourceError`, 409 в API)
+- CI на GitHub Actions: автозапуск pytest при push/PR в `main`
+- `.gitattributes` для нормализации переносов строк (LF)
+- PostgreSQL как альтернативный бэкенд хранилища источников и кэша статей:
+  `docker-compose.yml`, `db/schema.sql`, `PostgresSourceRepository`,
+  `PostgresArticleCache`, переключение через переменную окружения
+  `SOURCE_BACKEND=postgres`
 
 ### Planned
-- Хранилище источников на SQLite вместо файла sources.txt
 - Управление источниками и категориями через веб-интерфейс
 - Умная фильтрация/рекомендации
 

@@ -1,0 +1,17 @@
+services:
+  db:
+    image: postgres:16
+    container_name: rss-aggregator-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: rss_aggregator
+      POSTGRES_USER: rss_user
+      POSTGRES_PASSWORD: rss_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+
+volumes:
+  pgdata:
