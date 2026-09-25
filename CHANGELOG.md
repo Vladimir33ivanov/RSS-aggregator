@@ -33,6 +33,15 @@
 - Postgres как service в CI (`.github/workflows/tests.yml`) — Postgres-тесты
   теперь реально гоняются на каждый push, а не только локально
 
+### Changed
+- `RSS Fetcher` опрашивает источники параллельно (`httpx.AsyncClient` +
+  `asyncio.gather`) вместо последовательного цикла на `requests`;
+  `FeedService.get_feed()` стал `async`, CLI (`main.py`) вызывает его через
+  `asyncio.run(...)`. Реализует сценарий качества №1 из
+  `architecture-drivers.md`, задокументированный с первой ADD-итерации, но
+  до сих пор не реализованный
+- `requests` убран из `requirements.txt` — заменён на уже имевшийся `httpx`
+
 ### Fixed
 - `PostgresArticleCache.save()`: DELETE + серия INSERT теперь в одной
   транзакции (`with self._conn:` вместо `autocommit=True`) — раньше

@@ -9,7 +9,7 @@ router = APIRouter(prefix="/feed", tags=["feed"])
 
 
 @router.get("")
-def get_feed(
+async def get_feed(
     keyword: Optional[str] = Query(default=None),
     days: Optional[int] = Query(default=None, description="Новости за последние N дней"),
     category: Optional[str] = Query(default=None),
@@ -17,6 +17,6 @@ def get_feed(
     feed_service: FeedService = Depends(get_feed_service),
 ):
     sort_reverse = {"asc": False, "desc": True}.get(sort)
-    return feed_service.get_feed(
+    return await feed_service.get_feed(
         keyword=keyword, days=days, category=category, sort_reverse=sort_reverse
     )

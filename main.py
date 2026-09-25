@@ -4,6 +4,7 @@
 аргументов и вывод. См. docs/architecture-drivers.md."""
 
 import argparse
+import asyncio
 
 from app.cli.formatter import print_as_table
 from app.dependencies import get_feed_service, get_source_repository
@@ -25,12 +26,14 @@ if __name__ == "__main__":
 
     sort_reverse = {"asc": False, "desc": True}.get(args.sort)
 
-    articles = get_feed_service().get_feed(
-        keyword=args.keyword,
-        days=args.days,
-        category=args.category,
-        sort_reverse=sort_reverse,
-        only_new=args.new,
+    articles = asyncio.run(
+        get_feed_service().get_feed(
+            keyword=args.keyword,
+            days=args.days,
+            category=args.category,
+            sort_reverse=sort_reverse,
+            only_new=args.new,
+        )
     )
 
     if args.format in ("json", "all"):

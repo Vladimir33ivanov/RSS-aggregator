@@ -1,6 +1,14 @@
 """Application service: оркестрирует получение фидов, кэш, фильтрацию,
 дедупликацию и сортировку. Логика перенесена из main.py (merge_with_cache
-и основной пайплайн). Используется и CLI, и API — не дублируется."""
+и основной пайплайн). Используется и CLI, и API — не дублируется.
+
+get_feed() — async, потому что параллельный опрос источников (fetch_all)
+реально асинхронный (httpx.AsyncClient). Кэш (_merge_with_cache) при этом
+остаётся синхронным — и файловый I/O, и psycopg2 блокирующие; для
+масштаба этого проекта отдельный async-драйвер для Postgres (asyncpg) —
+overkill, поэтому здесь осознанный компромисс: сетевые вызовы к N внешним
+источникам распараллелены, а один блокирующий вызов к своей же БД/файлу
+в конце — нет."""
 
 from datetime import datetime
 from typing import List, Optional
@@ -12,7 +20,7 @@ from app.domain.filters.keyword_filter import KeywordFilter
 from app.domain.models import Article
 from app.domain.sorting import sort_by_title
 from app.infrastructure.article_cache import FileArticleCache
-from app.infrastructure.rss_fetcher import fetch_source
+from app.infrastructure.rss_fetcher import fetch_all
 from app.infrastructure.source_repository import FileSourceRepository
 
 
@@ -24,7 +32,7 @@ class FeedService:
         # передаёт конкретный бэкенд (файл или Postgres) явно.
         self._cache = article_cache if article_cache is not None else FileArticleCache()
 
-    def get_feed(
+    async def get_feed(
         self,
         keyword: Optional[str] = None,
         days: Optional[int] = None,
@@ -33,9 +41,12 @@ class FeedService:
         use_cache: bool = True,
         only_new: bool = False,
     ) -> List[Article]:
-        articles: List[Article] = []
-        for source in self._sources.list_all():
-            articles.extend(fetch_source(source.url))
+        # Источники опрашиваются параллельно, а не по очереди (см.
+        # rss_fetcher.fetch_all и architecture-drivers.md, сценарий №1) —
+        # медленный источник больше не задерживает всю ленту на время,
+        # кратное количеству источников.
+        urls = [source.url for source in self._sources.list_all()]
+        articles = await fetch_all(urls)
 
         if use_cache:
             articles = self._merge_with_cache(articles, only_new=only_new)
