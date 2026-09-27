@@ -56,3 +56,18 @@ class PostgresSourceRepository:
         with self._conn.cursor() as cur:
             cur.execute("DELETE FROM sources WHERE id = %s", (source_id,))
             return cur.rowcount > 0
+
+    def get_stats(self) -> List[dict]:
+        """Сколько статей сейчас в кэше у каждого источника — через
+        хранимую функцию source_article_counts() (db/schema.sql), а не
+        через агрегацию в Python. Специфично для Postgres-бэкенда: у
+        FileSourceRepository такого метода нет — файловое хранилище не
+        умеет считать на своей стороне, поэтому GET /sources/stats
+        доступен только при SOURCE_BACKEND=postgres (см. sources.py)."""
+        with self._conn.cursor() as cur:
+            cur.execute("SELECT source_id, url, name, category, article_count FROM source_article_counts()")
+            rows = cur.fetchall()
+        return [
+            {"id": r[0], "url": r[1], "name": r[2], "category": r[3], "article_count": r[4]}
+            for r in rows
+        ]

@@ -143,6 +143,9 @@ Repository pattern (шаги 4–6 выше) позволяет `Source Reposito
   `articles.source_id → sources.id` (`ON DELETE CASCADE`) — удаление
   источника автоматически чистит его статьи из кэша; `load()` использует
   `JOIN` для восстановления `source_url` в доменной модели `Article`.
+  Хранимая функция `source_article_counts()` считает статьи по каждому
+  источнику (`JOIN` + `GROUP BY` + `COUNT`) прямо в БД, а не в Python —
+  наружу отдана как `GET /sources/stats`.
 
 Бэкенд выбирается переменной окружения `SOURCE_BACKEND` (`file` — по
 умолчанию, `postgres` — база в Docker) в `app/dependencies.py`; подробности

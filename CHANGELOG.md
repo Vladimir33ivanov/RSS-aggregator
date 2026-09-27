@@ -32,6 +32,11 @@
   `tests/test_postgres_article_cache.py` (пропускаются без `DATABASE_URL`)
 - Postgres как service в CI (`.github/workflows/tests.yml`) — Postgres-тесты
   теперь реально гоняются на каждый push, а не только локально
+- Хранимая функция `source_article_counts()` (`JOIN` + `GROUP BY` + `COUNT`
+  прямо в БД) и `GET /sources/stats` — количество статей в кэше по каждому
+  источнику; доступно только с `SOURCE_BACKEND=postgres` (501 на файловом
+  бэкенде), `db/migrations/002_source_article_counts_function.sql` для
+  существующих БД
 
 ### Changed
 - `RSS Fetcher` опрашивает источники параллельно (`httpx.AsyncClient` +

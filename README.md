@@ -52,6 +52,7 @@ uvicorn app.main:app --reload
 |---|---|
 | `GET /health` | проверка, что сервис жив |
 | `GET /sources` | список источников (`?category=...` — фильтр) |
+| `GET /sources/stats` | статей в кэше по каждому источнику (только Postgres, см. ниже) |
 | `POST /sources` | добавить источник |
 | `DELETE /sources/{id}` | удалить источник |
 | `GET /feed` | лента (`?keyword=`, `?days=`, `?category=`, `?sort=asc\|desc`) |
@@ -100,6 +101,20 @@ Get-Content db/migrations/001_articles_fk_and_timestamptz.sql | docker exec -i r
 
 Миграция очищает таблицу `articles` (это одноразовый кэш на текущий день,
 не жалко) — `sources` она не трогает.
+
+### Хранимая функция source_article_counts()
+
+Считает количество статей в кэше по каждому источнику прямо в БД (`JOIN`
++ `GROUP BY` + `COUNT`, источники без статей тоже попадают в выборку с
+0) — выведена наружу как `GET /sources/stats`. Работает только с
+Postgres-бэкендом; на файловом хранилище эндпоинт вернёт `501`. Для базы,
+созданной до появления функции — накатить
+[`db/migrations/002_source_article_counts_function.sql`](db/migrations/002_source_article_counts_function.sql)
+(это `CREATE OR REPLACE`, данные не трогает, можно гонять сколько угодно раз):
+
+```powershell
+Get-Content db/migrations/002_source_article_counts_function.sql | docker exec -i rss-aggregator-db psql -U rss_user -d rss_aggregator
+```
 
 ### EXPLAIN ANALYZE на объёме данных
 

@@ -25,6 +25,19 @@ def list_sources(
     return repo.list_all()
 
 
+@router.get("/stats")
+def source_stats(repo: FileSourceRepository = Depends(get_source_repository)):
+    """Количество статей в текущем кэше по каждому источнику. Доступно
+    только с PostgreSQL-бэкендом (SOURCE_BACKEND=postgres) — считает не
+    Python, а хранимая функция source_article_counts() в БД."""
+    if not hasattr(repo, "get_stats"):
+        raise HTTPException(
+            status_code=501,
+            detail="Доступно только с PostgreSQL-бэкендом (SOURCE_BACKEND=postgres)",
+        )
+    return repo.get_stats()
+
+
 @router.post("")
 def add_source(
     source: SourceIn,

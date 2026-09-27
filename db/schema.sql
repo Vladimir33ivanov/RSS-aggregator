@@ -38,3 +38,30 @@ CREATE INDEX IF NOT EXISTS idx_articles_cached_date ON articles (cached_date);
 
 -- Индекс под JOIN с sources в load() и под ON DELETE CASCADE
 CREATE INDEX IF NOT EXISTS idx_articles_source_id ON articles (source_id);
+
+-- Хранимая функция: сколько статей в текущем кэше у каждого источника.
+-- LEFT JOIN — источники без статей в кэше тоже попадают в выборку,
+-- с article_count = 0, а не пропадают из результата.
+-- Используется PostgresSourceRepository.get_stats() (см. GET /sources/stats).
+CREATE OR REPLACE FUNCTION source_article_counts()
+RETURNS TABLE (
+    source_id INTEGER,
+    url TEXT,
+    name TEXT,
+    category TEXT,
+    article_count BIGINT
+)
+LANGUAGE sql
+STABLE
+AS $$
+    SELECT
+        sources.id,
+        sources.url,
+        sources.name,
+        sources.category,
+        COUNT(articles.id) AS article_count
+    FROM sources
+    LEFT JOIN articles ON articles.source_id = sources.id
+    GROUP BY sources.id, sources.url, sources.name, sources.category
+    ORDER BY article_count DESC, sources.id;
+$$;

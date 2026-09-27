@@ -12,9 +12,12 @@ app/infrastructure/db.py) — то есть по умолчанию на лок�
 DATABASE_URL прокидывается автоматически."""
 
 import os
+from datetime import datetime, timezone
 
 import pytest
 
+from app.domain.models import Article
+from app.infrastructure.postgres_article_cache import PostgresArticleCache
 from app.infrastructure.postgres_source_repository import PostgresSourceRepository
 from app.infrastructure.source_repository import DuplicateSourceError
 
@@ -65,3 +68,28 @@ def test_delete(repo):
 
     assert repo.delete(added.id) is True
     assert repo.delete(added.id) is False
+
+
+def test_get_stats_includes_source_with_zero_articles(repo):
+    added = repo.add("https://pg-test-stats-empty.example/rss", name="No articles yet")
+
+    stats = {row["id"]: row["article_count"] for row in repo.get_stats()}
+
+    assert stats[added.id] == 0
+
+
+def test_get_stats_counts_cached_articles(repo):
+    added = repo.add("https://pg-test-stats.example/rss", name="With articles")
+    cache = PostgresArticleCache()
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    cache.save(
+        today,
+        [
+            Article(title="A1", link="https://pg-test-stats.example/a1", pub_date="", source_url=added.url),
+            Article(title="A2", link="https://pg-test-stats.example/a2", pub_date="", source_url=added.url),
+        ],
+    )
+
+    stats = {row["id"]: row["article_count"] for row in repo.get_stats()}
+
+    assert stats[added.id] == 2
