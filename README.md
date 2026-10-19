@@ -148,6 +148,29 @@ chmod +x scripts/backup_postgres.sh   # один раз
 0 3 * * * cd /путь/к/проекту && ./scripts/backup_postgres.sh
 ```
 
+### Проверка и восстановление из бэкапа
+
+[`scripts/restore_postgres.sh`](scripts/restore_postgres.sh) — бэкап,
+который ни разу не разворачивали, нельзя считать проверенным. Скрипт
+работает в двух режимах:
+
+```bash
+chmod +x scripts/restore_postgres.sh   # один раз
+
+# Безопасная проверка: архив разворачивается во ВРЕМЕННУЮ базу, скрипт
+# считает строки в таблицах и удаляет временную базу. Рабочая база
+# не затрагивается.
+./scripts/restore_postgres.sh
+
+# Восстановление поверх рабочей базы (спросит подтверждение, перед
+# заменой сам сделает страховочный бэкап текущего состояния):
+./scripts/restore_postgres.sh --replace
+```
+
+Архив можно указать явно (`./scripts/restore_postgres.sh backups/файл.sql.gz`),
+иначе берётся самый свежий из `backups/`. Каждый шаг пишется в консоль и
+в `logs/restore.log`. После `--replace` приложение нужно перезапустить.
+
 ## Структура проекта
 
 ```
@@ -161,7 +184,8 @@ db/
 ├── migrations/         # миграции для уже существующей БД
 └── explain_demo.sql    # демо EXPLAIN ANALYZE на большом объёме данных
 scripts/
-└── backup_postgres.sh  # pg_dump + ротация + логирование, для cron/WSL
+├── backup_postgres.sh   # pg_dump + ротация + логирование, для cron/WSL
+└── restore_postgres.sh  # проверка бэкапа во временной БД / восстановление
 docker-compose.yml  # локальный Postgres для разработки
 main.py             # тонкая CLI-обёртка над app/ (не дублирует логику)
 tests/              # pytest (test_postgres_* — интеграционные, нужен DATABASE_URL)

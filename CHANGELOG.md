@@ -32,6 +32,10 @@
   `tests/test_postgres_article_cache.py` (пропускаются без `DATABASE_URL`)
 - Postgres как service в CI (`.github/workflows/tests.yml`) — Postgres-тесты
   теперь реально гоняются на каждый push, а не только локально
+- `scripts/restore_postgres.sh` — проверка бэкапа (разворачивание архива во
+  временную БД с подсчётом строк и автоудалением) и восстановление поверх
+  рабочей БД (`--replace`: подтверждение, страховочный бэкап, логирование в
+  `logs/restore.log`)
 - Хранимая функция `source_article_counts()` (`JOIN` + `GROUP BY` + `COUNT`
   прямо в БД) и `GET /sources/stats` — количество статей в кэше по каждому
   источнику; доступно только с `SOURCE_BACKEND=postgres` (501 на файловом
